@@ -1,3 +1,4 @@
+const path = require('path')
 const gulp = require('gulp');
 const browserSync = require('browser-sync');
 const rename = require('gulp-rename');
@@ -10,15 +11,32 @@ const svgmin = require('gulp-svgmin');
 
 
 function compileHbs() {
-	return gulp.src('./templates/*.hbs')
-	.pipe(hb({debug: true})
-		.partials('./templates/partials/**/*.hbs')
-		.data('./data/*.json')
-		.data({"bar":"foo"})
-	)
-	.pipe(rename({extname: '.html'}))
-	.pipe(gulp.dest('./build'))
-	.pipe(browserSync.stream())
+	return gulp.src('./data/*.json')
+		.pipe(through.obj(function(file, enc, cb){
+			var name = path.parse(file.path).name;
+			var data = JSON.parse(String(file.contents));
+
+			gulp.src('./templates/*.hbs')
+				.pipe(hb({debug: true})
+					.partials('./templates/partials/**/*.hbs'))
+					.data(data)
+					.pipe(rename({
+						basename: name,
+						extname: '.html'
+					}))
+					.pipe(gulp.dest('./build'))
+					.pipe(browserSync.stream())
+					.on('error', cb)
+					.on('end', cb)
+		}));
+	// .pipe(hb({debug: true})
+	// 	.partials('./templates/partials/**/*.hbs')
+	// 	.data('./data/*.json')
+	// 	.data({"bar":"foo"})
+	// )
+	// .pipe(rename({extname: '.html'}))
+	// .pipe(gulp.dest('./build'))
+	// .pipe(browserSync.stream())
 }
 
 function watch() {
